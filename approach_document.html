@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Technical Approach Document: CardioTrack CT-200 Traceability & QA Test Generation Pipeline</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 16mm 18mm 16mm;
+      @bottom-right {
+        content: counter(page);
+      }
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      line-height: 1.55;
+      font-size: 10.5pt;
+      background: #fff;
+    }
+    .header-box {
+      border-bottom: 2px solid #0284c7;
+      padding-bottom: 12px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 20pt;
+      color: #0f172a;
+      margin: 0 0 8px 0;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px 20px;
+      font-size: 9pt;
+      color: #475569;
+      background: #f8fafc;
+      padding: 10px 14px;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+    }
+    .meta-item strong {
+      color: #0f172a;
+    }
+    h2 {
+      font-size: 13.5pt;
+      color: #0369a1;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 4px;
+      margin-top: 24px;
+      margin-bottom: 10px;
+      font-weight: 600;
+      page-break-after: avoid;
+    }
+    h3 {
+      font-size: 11pt;
+      color: #1e293b;
+      margin-top: 16px;
+      margin-bottom: 6px;
+      font-weight: 600;
+      page-break-after: avoid;
+    }
+    p, ul, ol {
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+    ul, ol {
+      padding-left: 20px;
+    }
+    li {
+      margin-bottom: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9pt;
+      margin: 12px 0 16px 0;
+      page-break-inside: avoid;
+    }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 7px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background-color: #f1f5f9;
+      color: #0f172a;
+      font-weight: 600;
+    }
+    tr:nth-child(even) td {
+      background-color: #f8fafc;
+    }
+    code {
+      font-family: "Cascadia Code", Consolas, Monaco, "Courier New", monospace;
+      font-size: 9pt;
+      background-color: #f1f5f9;
+      padding: 1px 4px;
+      border-radius: 4px;
+      color: #0369a1;
+    }
+    pre {
+      background-color: #0f172a;
+      color: #f8fafc;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-family: "Cascadia Code", Consolas, Monaco, monospace;
+      font-size: 8.5pt;
+      overflow-x: auto;
+      margin: 10px 0;
+      line-height: 1.4;
+    }
+    .callout {
+      background-color: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 10px 14px;
+      border-radius: 0 6px 6px 0;
+      margin: 12px 0;
+      font-size: 9.5pt;
+    }
+    .callout-warning {
+      background-color: #fef2f2;
+      border-left: 4px solid #ef4444;
+      padding: 10px 14px;
+      border-radius: 0 6px 6px 0;
+      margin: 12px 0;
+      font-size: 9.5pt;
+    }
+    .decision-block {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      page-break-inside: avoid;
+    }
+    .decision-q {
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 6px;
+      font-size: 10pt;
+    }
+    .decision-a {
+      font-size: 9.5pt;
+      color: #334155;
+    }
+    .page-break {
+      page-break-before: always;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-box">
+    <h1>Technical Approach Document</h1>
+    <div style="font-size: 12pt; color: #0284c7; font-weight: 600; margin-bottom: 10px;">
+      CardioTrack CT-200 Document Hierarchy, Versioning & QA Test Traceability Pipeline
+    </div>
+    <div class="meta-grid">
+      <div class="meta-item"><strong>Assignment:</strong> AI Engineering Internship Assignment</div>
+      <div class="meta-item"><strong>Company:</strong> Tri9T AI</div>
+      <div class="meta-item"><strong>Target Device:</strong> CardioTrack CT-200 Blood Pressure Monitor</div>
+      <div class="meta-item"><strong>Tech Stack:</strong> FastAPI, Pydantic, SQLAlchemy, SQLite, NoSQL Document Store</div>
+    </div>
+  </div>
+
+  <h2>1. Executive Summary & Problem Framing</h2>
+  <p>
+    In regulated medical device engineering (governed by <strong>FDA 21 CFR Part 820</strong>, <strong>IEC 62304</strong>, and <strong>ISO 14971</strong>), bidirectional traceability between software requirements and verification test cases is mandatory. A prevalent, critical failure mode in medical QA is <strong>stale traceability</strong>: when specifications evolve (e.g. cuff emergency relief time reduced from 2.0s to 1.5s), but QA test cases generated against earlier revisions are never flagged as outdated, creating false confidence in patient safety.
+  </p>
+  <p>
+    This project delivers a complete backend system and REST API that:
+  </p>
+  <ul>
+    <li>Parses real-world, irregular engineering PDFs into an exact hierarchical tree without data loss or incorrect parent-child linkages.</li>
+    <li>Supports non-destructive multi-version ingestion (v1 and v2), mapping canonical logical nodes and computing delta diffs.</li>
+    <li>Maintains version-pinned selections that freeze text snapshots and content hashes.</li>
+    <li>Generates concrete, executable medical QA test cases using LLMs with Pydantic structured output validation, JSON repair, and deterministic fallback.</li>
+    <li>Executes live staleness and semantic impact analysis at retrieval time, differentiating critical numerical threshold updates from cosmetic edits.</li>
+  </ul>
+
+  <h2>2. OCR & Document Parsing Architecture</h2>
+  <h3>2.1 Selected Parsing Approach: Typography- & Layout-Aware Span Extraction</h3>
+  <p>
+    Rather than treating the PDF as a flat string (discarding structural cues) or employing heavyweight, non-deterministic vision models (which hallucinate in clean vector PDFs), we engineered a <strong>low-level text span extraction pipeline using pure-Python <code>pypdf</code> visitor callbacks</strong>.
+  </p>
+  <div class="callout">
+    <strong>Key Architectural Advantage:</strong> Vector engineering manuals embed exact typographic metadata: font family, font size, transformation matrices (coordinates <code>x, y</code>), and bounding boxes. Extracting these directly yields 100% deterministic precision, instantaneous execution (&lt; 1s for the entire document), zero OCR character confusion, and zero external binary DLL dependencies.
+  </div>
+
+  <h3>2.2 Two-Pass Hierarchy Reconstruction Strategy</h3>
+  <ol>
+    <li>
+      <strong>Spatial Span Clustering:</strong> Text spans on each page are sorted vertically by <code>y</code> ascending and horizontally by <code>x</code> ascending. Spans sharing the same vertical baseline (<code>|y1 - y2| &le; 3.5 pt</code>) are grouped into single line records.
+    </li>
+    <li>
+      <strong>Typographic Classifier:</strong>
+      <ul>
+        <li><code>Title:</code> <code>font_size &ge; 20.0 pt</code> (Nimbus Sans Bold).</li>
+        <li><code>Heading 1 (Sections 1–8):</code> <code>font_size &ge; 16.0 pt</code>, <code>font_weight = Bold</code>, regex <code>^\d+\.\s+</code>.</li>
+        <li><code>Heading 2 (Subsections):</code> <code>font_size = 12.9 pt</code>, <code>font_weight = Bold</code>, regex <code>^\d+\.\d+\s+</code>.</li>
+        <li><code>Anomalous Headings (e.g. 3.2, 2.1.1.1):</code> Detected by <code>Bold</code> weight matching the recursive numerical pattern <code>^\d+(\.\d+)+\s+</code>.</li>
+        <li><code>Body Numbered Lists:</code> Regular font weight (<code>Nimbus Sans Regular</code>), preventing list items from being misclassified as section headers.</li>
+      </ul>
+    </li>
+    <li>
+      <strong>Prefix-Based Ancestor Chain Resolution:</strong> For section $S = p_1.p_2...p_k$, the builder searches for parent $p_1.p_2...p_{k-1}$. If missing (e.g. <code>2.1.1.1</code> skipping <code>2.1.1</code>), it walks up the prefix tree to find <code>2.1</code>, parenting <code>2.1.1.1</code> correctly under <code>2.1 General Specifications</code>.
+    </li>
+  </ol>
+
+  <div class="page-break"></div>
+
+  <h2>3. Handling Document Irregularities & Structural Inconsistencies</h2>
+  <p>
+    Manual inspection and automated typography auditing of <code>ct200_manual.pdf</code> and <code>ct200_manual_v2.pdf</code> identified 6 structural edge cases:
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 22%;">Irregularity</th>
+        <th style="width: 25%;">Occurrence in PDF</th>
+        <th style="width: 25%;">Naive Parser Failure</th>
+        <th style="width: 28%;">Pipeline Solution</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Duplicate Section Titles</strong></td>
+        <td><code>4.2 Error Codes</code> vs <code>7.1 Error Codes</code></td>
+        <td>Overwrites node records or conflates parent sections.</td>
+        <td>Distinct canonical keys (<code>sec_4_2</code> vs <code>sec_7_1</code>) and parent resolution (4 vs 7).</td>
+      </tr>
+      <tr>
+        <td><strong>Out-of-Order Numbering</strong></td>
+        <td><code>3.4 Auto Shutoff</code> appears before <code>3.3 Result Display</code></td>
+        <td>Sequential sorting distorts document flow or mis-parents text.</td>
+        <td>Nodes are appended in physical document occurrence order (<code>[3.1, 3.2, 3.4, 3.3]</code>).</td>
+      </tr>
+      <tr>
+        <td><strong>Skipped Hierarchy Levels</strong></td>
+        <td><code>2.1 General Specs</code> &rarr; <code>2.1.1.1 Battery Life</code> (skips <code>2.1.1</code>)</td>
+        <td>Strict level ($L-1$) checks create empty dummy nodes or drop the subsection.</td>
+        <td>Prefix ancestor truncation: walks up tree from <code>2.1.1</code> to <code>2.1</code>, linking cleanly.</td>
+      </tr>
+      <tr>
+        <td><strong>Body Numbered Lists</strong></td>
+        <td>Section 3.3 contains: <code>1. Normal...</code> through <code>5. Crisis...</code></td>
+        <td>Regex matching <code>^\d+\.</code> parses list items as top-level sections 1–5.</td>
+        <td>Typography weight check: Section headings are Bold; list items are Regular and kept in body.</td>
+      </tr>
+      <tr>
+        <td><strong>Multi-Line Table Cells</strong></td>
+        <td>Table 4.2: Codes <code>E2</code> and <code>E5</code> have descriptions spanning 2–3 lines.</td>
+        <td>Table cells split across rows; columns become desynchronized.</td>
+        <td>Spatial horizontal binning ($x &lt; 50$, $50 \le x &lt; 180$, $x \ge 180$) merges multi-line runs into Markdown tables.</td>
+      </tr>
+      <tr>
+        <td><strong>Pagination Shift Whitespace</strong></td>
+        <td>v2 addition of Section <code>5.3 Data Export</code> pushed subsequent sections across pages.</td>
+        <td>Inter-page newline gaps produce false-positive hash mismatches on unchanged text.</td>
+        <td>Whitespace and paragraph continuation normalization preserves identical hashes for unchanged sections.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>4. Multi-Version Document Matching & Diffing Strategy</h2>
+  <p>
+    When re-ingesting a revised manual (such as <code>data/ct200_manual_v2.pdf</code>), version 1 is preserved intact. Nodes are mapped across versions via <strong>canonical logical IDs</strong> (<code>logical_id</code>, e.g. <code>sec_3_2</code>, <code>sec_4_2</code>).
+  </p>
+  <ul>
+    <li><strong>UNCHANGED:</strong> Node exists in both versions with identical SHA-256 content hashes ($H_{v1} == H_{v2}$).</li>
+    <li><strong>MODIFIED:</strong> Node exists in both versions with different hashes ($H_{v1} 
+e H_{v2}$). Line-level unified diffs are generated.</li>
+    <li><strong>ADDED:</strong> Logical ID present in v2 but not v1 (e.g. <code>5.3 Data Export</code>).</li>
+    <li><strong>DELETED:</strong> Logical ID present in v1 but omitted in v2.</li>
+  </ul>
+
+  <div class="callout-warning">
+    <strong>Known Failure Modes of this Matching Strategy:</strong>
+    <ol>
+      <li><strong>Complete Section Renumbering:</strong> If an author inserts a new section 2.1 and shifts old 2.1 to 2.2, a pure section-number matcher matches old 2.1 with new 2.1, reporting a false 100% diff.</li>
+      <li><strong>Section Splitting / Merging:</strong> If one section is split into two, a 1:1 logical ID cannot capture 1-to-many relationships without semantic embeddings.</li>
+    </ol>
+  </div>
+
+  <h2>5. Version-Pinned Selections</h2>
+  <p>
+    When a QA engineer creates a named selection (e.g. <code>POST /api/selections</code>), the system freezes an immutable snapshot of:
+  </p>
+  <ul>
+    <li>The exact requirement heading and body text.</li>
+    <li>The SHA-256 content hash at the time of selection.</li>
+    <li>The pinned document version (e.g. <code>v1</code>).</li>
+  </ul>
+  <p>
+    If version 2 is subsequently ingested, existing selections continue resolving to their original frozen text snapshots.
+  </p>
+
+  <div class="page-break"></div>
+
+  <h2>6. LLM QA Test Generation & Error Handling Strategy</h2>
+
+  <h3>6.1 Prompt Engineering for Medical Device QA</h3>
+  <p>
+    The system prompt enforces compliance with <strong>ISO 14971 (Risk Management)</strong> and <strong>IEC 62304 (Medical Device Software Life Cycle)</strong>:
+  </p>
+  <ul>
+    <li>Every test case must trace directly to quantitative thresholds, error codes, and timing constraints.</li>
+    <li>Steps must be concrete and repeatable on a hardware-in-the-loop (HIL) test bench.</li>
+    <li>Expected results must define observable pass/fail criteria with explicit tolerances.</li>
+    <li>Hazard severity levels must be categorized: <code>CRITICAL</code>, <code>HIGH</code>, <code>MEDIUM</code>, or <code>LOW</code>.</li>
+  </ul>
+
+  <h3>6.2 Self-Healing Error Handling Pipeline</h3>
+  <ol>
+    <li><strong>Regex Sanitization & Repair:</strong> Strips markdown code fences (<code>```json ... ```</code>), extracts outermost JSON structures, and cleans trailing commas.</li>
+    <li><strong>Pydantic Schema Validation:</strong> Validates fields against <code>GeneratedTestPlan</code> (ensuring 3–5 test cases, non-empty steps, valid severities).</li>
+    <li><strong>Corrective Feedback Retry:</strong> On validation error, re-prompts the LLM with the exact validation error message and raw output (up to 3 retries).</li>
+    <li><strong>Deterministic Domain Fallback:</strong> If network calls fail or no API key is provided, activates a domain generator that derives concrete test cases directly from the section specifications.</li>
+  </ol>
+
+  <h3>6.3 Duplicate Selection Submission Policy</h3>
+  <p>
+    <strong>Policy:</strong> <em>Content-Hash Idempotency with Explicit Force Override</em>.
+  </p>
+  <p>
+    <strong>Rationale:</strong> In regulated medical software QA, reproducibility is vital. Re-running non-deterministic LLMs on identical specifications creates duplicate, divergent test IDs, which risks audit confusion and wastes API tokens. By default, the system returns cached generations with <code>cached: true</code>, while offering <code>force_regenerate: true</code> when new test ideas are needed.
+  </p>
+
+  <h2>7. Live Staleness & Semantic Impact Detection</h2>
+  <p>
+    When retrieving test cases (<code>GET /api/test-cases/{id}</code>), the system compares the pinned content hashes recorded at generation time against the latest version's corresponding nodes.
+  </p>
+  <ul>
+    <li><strong>FRESH:</strong> All referenced nodes have identical hashes in the latest version.</li>
+    <li><strong>STALE:</strong> One or more referenced nodes have changed.</li>
+    <li><strong>ORPHANED:</strong> A referenced node was deleted in the latest manual version.</li>
+  </ul>
+
+  <h3>Semantic Impact Analysis</h3>
+  <p>
+    The system compares numeric values and thresholds across versions:
+  </p>
+  <ul>
+    <li><code>CRITICAL_THRESHOLD_CHANGE:</code> Alters numerical safety parameters (e.g. E3 emergency auto-deflate time reduced from 2.0s to 1.5s, or cuff inflation increment reduced from 40 mmHg to 30 mmHg).</li>
+    <li><code>SPECIFICATION_MODIFICATION:</code> Non-numeric wording or explanatory changes.</li>
+  </ul>
+
+  <div class="page-break"></div>
+
+  <h2>8. Decision Log (Required Questions)</h2>
+
+  <div class="decision-block">
+    <div class="decision-q">
+      1. What's the one part of this system most likely to silently give wrong results without erroring? How would you catch it?
+    </div>
+    <div class="decision-a">
+      <strong>Answer:</strong> The most dangerous failure mode is <strong>parent-child misattribution caused by unstructured formatting anomalies</strong> (e.g. an author inserting a bold sub-bullet that begins with numbers, or changing section number schemes to alphabetic prefixes). The parser would succeed without raising an exception, but would silently attach the section to the root or an incorrect ancestor.<br><br>
+      <strong>How to catch it:</strong> Implement an automated <strong>Hierarchy Invariant Verifier</strong> that runs at the end of ingestion. It asserts mathematical tree invariants:
+      <ol style="margin-top: 4px; margin-bottom: 2px;">
+        <li>Section depth must equal numbering dot-depth ($Level(S) = Count(dots) + 1$).</li>
+        <li>Monotonicity checks: no section may have a child with a higher major prefix (a child of 3 cannot start with 4).</li>
+        <li>Visual indentation cross-check: horizontal coordinate $x_{indent}(child) \ge x_{indent}(parent)$.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="decision-block">
+    <div class="decision-q">
+      2. Where did you choose simplicity over correctness because of time, and what would break first if this went to production as-is?
+    </div>
+    <div class="decision-a">
+      <strong>Answer:</strong> We chose simplicity by relying on <strong>section number prefixes for logical node identity</strong> (<code>sec_3_2</code>, <code>sec_4_2</code>) rather than training a continuous semantic embedding and graph-alignment model.<br><br>
+      <strong>What breaks first in production:</strong> If an engineering editor inserts a new section 2.1 ("Regulatory Standards") and renumbers every subsequent section (so old 2.1 General Specs becomes 2.2), our matcher will compare old 2.1 against new 2.1, falsely reporting that "General Specs" was completely rewritten into "Regulatory Standards". A production system would combine section numbers with cosine similarity of headings to distinguish renumbered sections from modified sections.
+    </div>
+  </div>
+
+  <div class="decision-block">
+    <div class="decision-q">
+      3. Name one input (to your parser, your versioning matcher, or your LLM call) that you did not handle, and what your system does when it sees it.
+    </div>
+    <div class="decision-a">
+      <strong>Answer:</strong> We did not handle <strong>scanned, raster-only bitmap PDFs containing zero digital text layers</strong>. When our <code>pypdf</code> extractor encounters a purely scanned document, it extracts 0 text spans, produces an empty tree with 0 sections, and exits with a valid but empty <code>DocumentTree</code>.<br><br>
+      <strong>Production remediation:</strong> The pipeline would incorporate an optical OCR fallback (such as Tesseract or AWS Textract) triggered automatically whenever extracted text character density falls below 50 characters per page.
+    </div>
+  </div>
+
+  <h2>9. What We Would Do Differently With More Time</h2>
+  <ol>
+    <li><strong>Interactive AST Diff Visualizer:</strong> Render visual split diffs in a web UI highlighting exact numerical parameter edits in red/green.</li>
+    <li><strong>Hybrid Semantic + Graph Matcher:</strong> Combine dense vector embeddings with hierarchy tree edit distance (Zhang-Shasha algorithm) to track sections across major reorganizations.</li>
+    <li><strong>Automated Impact-Scored Re-Generation:</strong> When a requirement experiences a threshold change, auto-draft an updated test case diff (e.g. updating the expected result from 2.0s to 1.5s) and route it to QA leads for one-click approval.</li>
+  </ol>
+
+  <div style="margin-top: 30px; padding-top: 10px; border-top: 1px solid #cbd5e1; font-size: 8.5pt; color: #64748b; text-align: center;">
+    CardioTrack CT-200 Traceability & QA Test Generation Pipeline &bull; Technical Approach Document &bull; Tri9T AI Assignment
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,34 @@
+Subject: Submission: AI Engineering Internship Assignment - CardioTrack CT-200 Traceability & QA Generation Pipeline
+
+Dear Tri9T AI Team,
+
+I am pleased to submit my solution for the AI Engineering Internship Assignment: CardioTrack CT-200 Document Hierarchy, Versioning & QA Test Traceability Pipeline.
+
+Repository & Deliverables:
+- GitHub Repository: [Link to your GitHub repo]
+- Approach Document: APPROACH.md (included in repository root)
+- Technical README: README.md (with step-by-step setup, test commands, and v1 -> v2 walkthrough)
+- Standalone Demo Script: demo_flow.py (automated end-to-end execution)
+
+Key Solution Highlights:
+1. Pure-Python Typography & OCR Pipeline: Correctly extracts and preserves titles, headings, levels, tables, lists, and parent-child hierarchy from the raw CT-200 PDF without third-party C/DLL binary dependencies.
+2. Handled Document Irregularities:
+   - Duplicate section titles: 4.2 Error Codes vs 7.1 Error Codes mapped to distinct logical IDs and parent trees.
+   - Out-of-order numbering: 3.4 Auto Shutoff appearing before 3.3 Result Display preserved in document sequence under Section 3.
+   - Skipped hierarchy levels: 2.1.1.1 correctly parented to 2.1 without phantom nodes.
+   - Numbered list distinction: Items 1-5 in 3.3 preserved as body text via font weight classification.
+   - Reconstructed multi-line table cells (Parameter/Value and Error Codes) into clean Markdown tables.
+   - Inter-page continuation normalization to prevent pagination-induced false-positive staleness flags.
+3. Multi-Version Relational Tree: Re-ingests modified v2 without destroying v1, computing line-level diffs and identifying ADDED (5.3 Data Export), MODIFIED, and UNCHANGED sections.
+4. Version-Pinned Selections: Selections freeze exact text snapshots and content hashes at creation time, ensuring historical selections continue to resolve accurately.
+5. Structured LLM Generation & Error Handling: Generates 3-5 concrete medical device QA test cases with Pydantic validation, self-healing JSON repair, retry backoff, and a deterministic fallback engine.
+6. Auditable Duplicate Policy: Returns cached results for identical selections to guarantee test suite reproducibility, with an explicit force_regenerate override.
+7. Real-Time Staleness & Semantic Impact: Flags outdated test cases when referenced sections change in v2, classifying CRITICAL_THRESHOLD_CHANGE (e.g. E3 auto-deflate time updated from 2.0s to 1.5s) vs wording updates.
+8. Comprehensive Test Suite: 19 automated pytest tests covering irregularities, versioning, selections, LLM schemas, staleness, and the complete REST API lifecycle (100% pass rate).
+
+The complete Decision Log addressing the required failure modes, production trade-offs, and unhandled inputs is available in Section 8 of APPROACH.md.
+
+I look forward to discussing the architecture and design decisions with your engineering team.
+
+Best regards,
+AI Engineering Internship Candidate
